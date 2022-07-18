@@ -1,85 +1,110 @@
-import wolframalpha
-import wikipedia                             # wikipedia and wolframalpha modules to get answers to users queries
-from tkinter import *                        # Tkinter module to display answers on GUI window
-import speech_recognition as sr              #Speech Recognition Module was used to take audio input
-from apimodule import *                      #Separate Module Created to Stored Personal API key
-
-# Importing all the required modules required 
-# to get information
-
-while True:
+import pyttsx3 
+import speech_recognition as sr 
+import datetime
+import wikipedia 
+import webbrowser
+import os
+import smtplib
+ 
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
+ 
+ 
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+ 
+ 
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("Good Morning!")
+ 
+    elif hour>=12 and hour<18:
+        speak("Good Afternoon!")  
+ 
+    else:
+        speak("Good Evening!")  
+ 
+    speak("I am Lira Boss. Please tell me how may I help you")      
+ 
+def takeCommand():
+ 
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        # Listening to Microphone for Audio Input
-        print("Speak something....")
+        print("Listening...")
+        r.pause_threshold = 1
         audio = r.listen(source)
+ 
+    try:
+        print("Recognizing...")    
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+ 
+    except Exception as e:
+        # print(e)    
+        print("Unable to hear,speak clearly and loudly please...")  
+        return "None"
+    return query
+ 
+def sendEmail(to, content):
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login('youremail@gmail.com', 'your-password')
+    server.sendmail('youremail@gmail.com', to, content)
+    server.close()
+ 
+if __name__ == "__main__":
+    wishMe()
+    while True:
+    # if 1:
+        query = takeCommand().lower()
+ 
+        # Logic for executing tasks based on query
+        if 'wikipedia' in query:
+            speak('Searching Wikipedia...')
+            query = query.replace("wikipedia", "")
+            results = wikipedia.summary(query, sentences=2)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+ 
+        elif 'open youtube' in query:
+            webbrowser.open("youtube.com")
+ 
+        elif 'open google' in query:
+            webbrowser.open("google.com")
+ 
+        elif 'open stackoverflow' in query:
+            webbrowser.open("stackoverflow.com")  
+ 
+ 
+        elif 'play music' in query:
+            music_dir = 'C:\\Users\\Ankit Sharma\\Music'
+            # Add location of music directory to play music files
+            songs = os.listdir(music_dir)
+            print(songs)    
+            os.startfile(os.path.join(music_dir, songs[0]))
+ 
+        elif 'the time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")    
+            speak(f"Sir, the time is {strTime}")
+ 
+        elif 'open code' in query:
+            codePath = "C:\\Users\\Ankit Sharma\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+            os.startfile(codePath)
+ 
+        elif 'email to harry' in query:
+            try:
+                speak("What should I say?")
+                content = takeCommand()
+                to = "ankitbalotra1@gmail.com"    
+                sendEmail(to, content)
+                speak("Email has been sent!")
+            except Exception as e:
+                print(e)
+                speak("Sorry my Boss. I am not able to send this email")    
+ 
 
-        try:
-            userInput = r.recognize_google(audio)
-            # Performs speech recognition on audio_data (an AudioData instance),
-            # using the Google Speech Recognition API and coverting 
-            # audio data to text format
-
-            input = "\nHello!! Welcome to Lira-Your Own Assistant \n \n You Asked Me :  "+userInput+" \n\n\n"
-            # Storint Greeting Message and question asked in a variable in string format
-
-            if userInput == "stop": #If user says stop, Program will stop implementing
-                print("Program will exit")
-                break
-
-            else:
-                
-
-                try:
-                    # Exception handling is done again using try except statement
-	
-                    window = Tk()   	#Creating main GUI application window with proper dimensions
-                    window.geometry("700x600")
-
-                    app_id = api_id 	#YOUR API KEY (storing personal api key in variable)
-                    client = wolframalpha.Client(app_id)    
-                    res = client.query(userInput)
-                    answer = next(res.results).text 
-                    # answer is obtained from wolframalpha and is stored
-
-                    print("Answer form WOlfram|Alpha: ")
-                    print(answer)
-
-                    # Answer received is printed in GUI window 
-                    label1 = Label(window, justify=CENTER, wraplength=650, compound=CENTER,
-                                   padx=10, text=input + answer,fg='#063970', font='times 15 bold')
-                    label1.pack()
-
-                    # Closing window we created after printing output
-                    window.after(7000, lambda: window.destroy())
-                    mainloop()
-
-                except Exception as e:
-
-                    window = Tk()   #Creating main GUI application window with proper dimensions
-                    window.geometry("700x600")
-
-                    # If no output form wolframalpha then wikipedia is used
-
-                    print("No results from Wolfram|Alpha. Trying Wikipedia.")
-
-                    answer = wikipedia.summary(userInput)      #Answer is obtained using wikipedia.summary method
-                   
-                    print("Answer form Wikipedia: ")
-                    print(answer)
-                    
-                    # Answer received is printed in GUI window 
-                    label1 = Label(window, justify=CENTER, wraplength=650, compound=CENTER,
-                                   padx=10, text=input + answer,fg='#873e23', font='times 15 bold')
-                    label1.pack()
-
-                    # Closing window we created after showing output
-                    window.after(7000, lambda: window.destroy())
-                    mainloop()
-
-        except Exception as e:
-            # If source unable to listen then print exception
-
-            print(e)
-            answer = "Sorry we cannot hear you"
-            print(answer)
